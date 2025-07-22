@@ -1,4 +1,8 @@
 # Emotion-Lite AI: A Minimalist Framework for Emotion-Driven Agents
+## TL;DR
+This repo proposes a minimalist emotional framework for artificial agents:  
+**Desire** drives behavior, **anxiety** regulates it.  
+Forget anger, frustration, or sadness—they're emergent, not essential.
 
 ## 🚧 Concept Overview
 
