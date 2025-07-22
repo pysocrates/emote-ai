@@ -4,7 +4,7 @@ This repo proposes a minimalist emotional framework for artificial agents:
 **Desire** drives behavior, **anxiety** regulates it.  
 Forget anger, frustration, or sadness—they're emergent, not essential.
 
-## 🚧 Concept Overview
+## Concept Overview
 
 This repo presents a conceptual model for designing AI agents driven by **only two emotional primitives**:
 
@@ -17,7 +17,7 @@ The thesis is simple:
 
 ---
 
-## 💡 Core Idea
+## Core Idea
 
 ### Traditional Emotional AI:
 - Attempts to simulate a wide range of human emotions (joy, anger, sadness, empathy)
@@ -30,7 +30,7 @@ The thesis is simple:
 
 ---
 
-## 🧠 Design Outline
+## Design Outline
 
 ```python
 class EmotionLiteAgent:
@@ -54,7 +54,7 @@ class EmotionLiteAgent:
             return retreat_or_request_help()
 
 ```
-## 🔎 Why Not More Emotions?
+## Why Not More Emotions?
 > You don’t need anger—just an anxious desire that isn’t being fulfilled.
 > You don’t need sadness—just lowered desire intensity over time.
 > You don’t need frustration—just escalating anxiety under blocked conditions.
@@ -65,23 +65,23 @@ Simplifies affective modeling for agents
 - Avoids manipulation or emotional uncanny valley
 - Encourages action-oriented, interpretable behavior
 
-## 🌍 Use Cases
+## Use Cases
 - Autonomous agents and copilots with bounded emotional variance
 - Industrial robotics or field systems needing goal adaptation under uncertainty
 - AI safety agents requiring emotional transparency and predictability
 - Simulation AI for games, tutoring systems, or virtual companions
 
-## 📌 Future Directions
+## Future Directions
 - Expand with bounded memory (emotions influenced by past events)
 - Combine with reinforcement learning to tune anxiety as a pseudo-intrinsic reward signal
 - Investigate how this maps to real-world human-expert systems (e.g., pilots, surgeons, military)
 
-## ✍️ Author
+## Author
 Cory ([@pysocrates](https://github.com/pysocrates))
 Im just a web dev :)
 
-## ⚡ Quote Worth Remembering
+## Quote Worth Remembering
 “Emotion isn’t decoration—it’s regulation. And all an AI really needs is a desire to succeed, and just enough anxiety to avoid failing.”
 
-## 📥 Feedback
+## Feedback
 Rs and discussions welcome. This is not a codebase—yet—but a prompt for systems designers, AI safety thinkers, and anyone who believes simple things done well can reshape how we think about intelligence.
