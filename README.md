@@ -77,6 +77,7 @@ Simplifies affective modeling for agents
 - Investigate how this maps to real-world human-expert systems (e.g., pilots, surgeons, military)
 
 ## ✍️ Author
+Cory ([@pysocrates](https://github.com/pysocrates))
 Im just a web dev :)
 
 ## ⚡ Quote Worth Remembering
