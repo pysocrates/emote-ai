@@ -1,4 +1,4 @@
-# Emotion-Lite AI 2.0
+#Emote-AI 2.0
 
 ### A Minimal Framework for Agent Behavior Using Desire, Anxiety, and Confidence
 
@@ -9,7 +9,7 @@
 
 ## Concept Update: Emotion-Lite 2.0
 
-In the original Emotion-Lite AI framework, agent behavior was governed by just two emotional primitives:
+In the original Emote-AI framework, agent behavior was governed by just two emotional primitives:
 
 * **Desire**: Goal-oriented motivation (the "pull" toward outcomes)
 * **Anxiety**: Regulatory tension due to uncertainty, failure risk, or external obstacles
