@@ -1,4 +1,4 @@
-#Emote-AI 2.0
+##Emote-AI 2.0
 
 ### A Minimal Framework for Agent Behavior Using Desire, Anxiety, and Confidence
 
