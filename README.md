@@ -7,7 +7,7 @@
 
 ---
 
-## Concept Update: Emotion-Lite 2.0
+## Concept Update: Emote-AI 2.0
 
 In the original Emote-AI framework, agent behavior was governed by just two emotional primitives:
 
