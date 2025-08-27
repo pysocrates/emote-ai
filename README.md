@@ -108,4 +108,4 @@ class EmotionLiteAgent:
 
 ##  Summary
 
-Emotion-Lite AI 2.0 expands the original minimal framework by introducing **confidence** as a third scalar, giving agents the ability to adjust behavior based on self-assessed capability in dynamic environments. The goal remains clarity, safety, and low-complexity control over behavioral logic for intelligent agents in alignment-critical contexts.
+Emote-AI 2.0 expands the original minimal framework by introducing **confidence** as a third scalar, giving agents the ability to adjust behavior based on self-assessed capability in dynamic environments. The goal remains clarity, safety, and low-complexity control over behavioral logic for intelligent agents in alignment-critical contexts.
