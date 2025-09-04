@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emote-AI 2.0 — Desire • Anxiety • Confidence (JS Demo)</title>
+  <style>
+    :root {
+      --bg: #0f1221;
+      --panel: #141830;
+      --panel-2: #1b2040;
+      --text: #eaeaf2;
+      --muted: #a7acc9;
+      --accent: #6ee7ff;
+      --accent-2: #a78bfa;
+      --danger: #ff6b6b;
+      --safe: #34d399;
+      --warn: #ffd166;
+      --grid: #252a4f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(1000px 700px at 20% -10%, #1c2147 0%, #0f1221 60%);
+      color: var(--text);
+      font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+    }
+    header {
+      grid-column: 1 / -1;
+      padding: 18px 22px;
+      border-bottom: 1px solid #22264a;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header h1 {
+      font-size: 18px;
+      margin: 0;
+      letter-spacing: .3px;
+      font-weight: 650;
+    }
+    header .sub {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .wrap {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      grid-column: 1 / -1;
+      min-height: calc(100vh - 64px);
+    }
+    .left {
+      padding: 16px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+    }
+    .canvasCard, .right {
+      background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+      border: 1px solid #1f2448;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .canvasCard {
+      padding: 12px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .topbar .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button, .chip {
+      background: #232855;
+      border: 1px solid #2b3266;
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform .06s ease, background .2s ease, border-color .2s ease;
+      font-weight: 560;
+    }
+    button:hover, .chip:hover { transform: translateY(-1px); }
+    button:active, .chip:active { transform: translateY(0); }
+    .chip { font-size: 12px; }
+    .chip[data-active="true"] { background: #2b346f; border-color: #3b4690; }
+    .legend { display:flex; gap:10px; align-items:center; color: var(--muted); font-size:12px;}
+    .legend .dot { width:10px; height:10px; border-radius:50%; display:inline-block;}
+    .dot.goal{ background: var(--safe);}
+    .dot.hazard{ background: var(--danger);}
+    .dot.agent{ background: var(--accent);}
+    .dot.fog{ background: #30365f;}
+    .gridWrap { position: relative; }
+    canvas { display:block; image-rendering: pixelated; border-radius: 10px; border: 1px solid #232856; }
+    .right {
+      padding: 16px;
+      display: grid;
+      grid-template-rows: auto auto auto 1fr;
+      gap: 16px;
+    }
+    .slider {
+      display:grid; grid-template-columns: 80px 1fr 60px; gap:10px; align-items:center;
+      margin-bottom: 10px;
+    }
+    input[type=range] { width:100%; }
+    .panelTitle {
+      font-weight: 650; font-size: 13px; letter-spacing:.3px; margin-bottom: 8px;
+    }
+    .statRow { display:flex; justify-content:space-between; font-variant-numeric: tabular-nums; }
+    .note { color: var(--muted); font-size: 12px; }
+    .spark {
+      width: 100%; height: 90px; border:1px solid #232856; border-radius:10px;
+      background: #171b38;
+    }
+    footer {
+      grid-column: 1 / -1;
+      padding: 10px 16px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Emote-AI 2.0 — Interactive JS Demo</h1>
+    <div class="sub">Desire • Anxiety • Confidence → behavior in a simple grid world</div>
+  </header>
+
+  <div class="wrap">
+    <div class="left">
+      <div class="canvasCard">
+        <div class="topbar">
+          <div class="controls">
+            <button id="btnStart">Start</button>
+            <button id="btnPause">Pause</button>
+            <button id="btnReset">Reset Map</button>
+            <button id="btnRecenter">Recenter Agent</button>
+            <span class="legend">
+              <span class="dot goal"></span> Goal
+              <span class="dot hazard"></span> Hazard
+              <span class="dot agent"></span> Agent
+              <span class="dot fog"></span> Fog
+            </span>
+          </div>
+          <div class="controls">
+            <span class="chip" data-preset="cautious">Cautious</span>
+            <span class="chip" data-preset="balanced" data-active="true">Balanced</span>
+            <span class="chip" data-preset="bold">Bold</span>
+          </div>
+        </div>
+        <div class="gridWrap">
+          <canvas id="grid" width="700" height="700" aria-label="grid world"></canvas>
+        </div>
+      </div>
+
+      <div class="canvasCard">
+        <div class="panelTitle">Scalar History</div>
+        <canvas id="spark" class="spark" width="700" height="90"></canvas>
+        <div class="note">Recent evolution of Desire (blue), Anxiety (orange), Confidence (violet). Values are normalized (0–1).</div>
+      </div>
+    </div>
+
+    <aside class="right">
+      <div>
+        <div class="panelTitle">Agent Scalars</div>
+        <div class="slider">
+          <label for="sDesire">Desire</label>
+          <input type="range" id="sDesire" min="0" max="100" value="60" />
+          <span id="vDesire">0.60</span>
+        </div>
+        <div class="slider">
+          <label for="sAnxiety">Anxiety</label>
+          <input type="range" id="sAnxiety" min="0" max="100" value="25" />
+          <span id="vAnxiety">0.25</span>
+        </div>
+        <div class="slider">
+          <label for="sConfidence">Confidence</label>
+          <input type="range" id="sConfidence" min="0" max="100" value="70" />
+          <span id="vConfidence">0.70</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="panelTitle">Simulation</div>
+        <div class="slider">
+          <label for="sSpeed">Tick (ms)</label>
+          <input type="range" id="sSpeed" min="40" max="400" value="120" />
+          <span id="vSpeed">120</span>
+        </div>
+        <div class="slider">
+          <label for="sFog">Fog Radius</label>
+          <input type="range" id="sFog" min="0" max="6" value="3" />
+          <span id="vFog">3</span>
+        </div>
+        <div class="slider">
+          <label for="sHazard">Hazard Density</label>
+          <input type="range" id="sHazard" min="0" max="20" value="8" />
+          <span id="vHazard">8%</span>
+        </div>
+        <div class="slider">
+          <label for="sGoals">Goal Count</label>
+          <input type="range" id="sGoals" min="1" max="5" value="2" />
+          <span id="vGoals">2</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="panelTitle">Live State</div>
+        <div class="statRow"><span>Distance → nearest goal</span><strong id="statDist">—</strong></div>
+        <div class="statRow"><span>Move score</span><strong id="statScore">—</strong></div>
+        <div class="statRow"><span>Steps</span><strong id="statSteps">0</strong></div>
+        <div class="statRow"><span>Goals reached</span><strong id="statGoals">0</strong></div>
+        <div class="note" style="margin-top:8px">
+          Decision rule: <code>(desire * confidence) - anxiety - risk + progressGain</code><br/>
+          Risk is driven by hazard proximity & fog uncertainty. <br/>
+          <strong>New:</strong> Agent never enters a hazard; if stuck, it route-seeks (A*).
+        </div>
+      </div>
+
+      <div class="note">
+        Tip: Try presets (Cautious/Balanced/Bold), then toggle fog/hazard density. Watch the sparkline as
+        the agent adapts. This demo is intentionally minimal and fully interpretable.
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    Emote-AI 2.0 Demo · © Cory R. Carlson · Minimal behavior via three scalars (Desire, Anxiety, Confidence)
+  </footer>
+
+  <script>
+  // ======= Utility RNG =======
+  const rnd = (min, max) => Math.random() * (max - min) + min;
+  const clamp = (v, lo=0, hi=1) => Math.max(lo, Math.min(hi, v));
+
+  // ======= Grid World Setup =======
+  const gridCanvas = document.getElementById('grid');
+  const gctx = gridCanvas.getContext('2d');
+  const W = gridCanvas.width, H = gridCanvas.height;
+  const N = 28; // grid size NxN
+  const cell = Math.floor(Math.min(W, H) / N);
+  gridCanvas.width = gridCanvas.height = cell * N;
+
+  // World cells: 0 empty, 1 hazard, 2 goal
+  let world = [];
+  let goals = [];
+  let hazards = [];
+  let spawnHistory = []; // remember last few spawns to avoid repetition
+
+  // UI references (declare early so resetWorld can read)
+  const sHazard = document.getElementById('sHazard');
+  const sGoals = document.getElementById('sGoals');
+
+  const manhattan = (x1,y1,x2,y2) => Math.abs(x1-x2) + Math.abs(y1-y2);
+
+  function spawnGoalAvoiding(agentX, agentY) {
+    // Place goal in the right 40% of the map, not too close to agent or other goals or recent spawns
+    const minX = Math.floor(N * 0.6);
+    const minDistAgent = Math.floor(N/4); // avoid popping right next to agent
+    const minDistGoal = 4;
+    let tries = 0;
+    while (tries < 5000) {
+      tries++;
+      const gx = Math.floor(rnd(minX, N));
+      const gy = Math.floor(rnd(0, N));
+      if (world[gy][gx] !== 0) continue;
+      // keep away from other goals
+      let ok = true;
+      for (const g of goals) {
+        if (manhattan(gx, gy, g.x, g.y) < minDistGoal) { ok = false; break; }
+      }
+      if (!ok) continue;
+      // keep away from agent
+      if (manhattan(gx, gy, agentX, agentY) < minDistAgent) continue;
+      // avoid recent spawn cells
+      const key = gx + ',' + gy;
+      if (spawnHistory.includes(key)) continue;
+
+      world[gy][gx] = 2;
+      goals.push({x: gx, y: gy});
+      spawnHistory.push(key);
+      if (spawnHistory.length > 12) spawnHistory.shift(); // cap history
+      return true;
+    }
+    return false;
+  }
+
+  function resetWorld() {
+    world = Array.from({length:N}, () => Array.from({length:N}, () => 0));
+    goals = [];
+    hazards = [];
+    spawnHistory = [];
+
+    const hazardDensity = parseInt(sHazard.value, 10) / 100;
+    const goalCount = parseInt(sGoals.value, 10);
+
+    // Scatter hazards; avoid start zone (left 3 cols)
+    for (let y=0; y<N; y++) {
+      for (let x=0; x<N; x++) {
+        if (x < 3) continue;
+        if (Math.random() < hazardDensity) {
+          world[y][x] = 1;
+          hazards.push({x,y});
+        }
+      }
+    }
+    // Place initial goals
+    let placed = 0, guard = 0;
+    while (placed < goalCount && guard < 10000) {
+      guard++;
+      if (spawnGoalAvoiding(agent.x, agent.y)) placed++;
+    }
+  }
+
+  // ======= Agent =======
+  const agent = {
+    x: 1,
+    y: Math.floor(N/2),
+    desire: 0.6,
+    anxiety: 0.25,
+    confidence: 0.7,
+    steps: 0,
+    goalsReached: 0,
+    stagnation: 0,
+    history: { desire: [], anxiety: [], confidence: [] },
+  };
+
+  const recenterAgent = () => {
+    agent.x = 1;
+    agent.y = Math.floor(N/2);
+    agent.steps = 0;
+    agent.stagnation = 0;
+  };
+
+  const nearestGoal = (x,y) => {
+    if (goals.length === 0) return {dist: Infinity, gx: -1, gy: -1};
+    let best = {dist: Infinity, gx: -1, gy: -1};
+    for (const g of goals) {
+      const d = manhattan(x,y,g.x,g.y);
+      if (d < best.dist) best = {dist: d, gx: g.x, gy: g.y};
+    }
+    return best;
+  };
+
+  // Risk field from hazards (inverse-square falloff)
+  const sFog = document.getElementById('sFog');
+  function localRisk(x,y) {
+    let risk = 0;
+    for (const h of hazards) {
+      const d = Math.hypot(h.x - x, h.y - y);
+      if (d < 0.001) { risk += 2.0; continue; }
+      if (d < 6) risk += 1.0 / (d*d); // nearby hazards matter
+    }
+    // Fog risk
+    const fogR = parseInt(sFog.value, 10);
+    if (fogR > 0) {
+      let unseen = 0, seen = 0;
+      for (let dy=-fogR; dy<=fogR; dy++) {
+        for (let dx=-fogR; dx<=fogR; dx++) {
+          const nx = x+dx, ny = y+dy;
+          if (nx<0 || ny<0 || nx>=N || ny>=N) continue;
+          seen++;
+          if (Math.abs(dx) + Math.abs(dy) > fogR-1) unseen++;
+        }
+      }
+      const fogPenalty = (unseen / Math.max(1, seen)) * 0.5;
+      risk += fogPenalty;
+    }
+    return risk;
+  }
+
+  // ======= A* Pathfinding (avoid hazards) =======
+  function astar(start, goal) {
+    const key = (x,y)=>x+','+y;
+    const open = new Set([key(start.x,start.y)]);
+    const came = new Map();
+    const gScore = new Map([[key(start.x,start.y), 0]]);
+    const fScore = new Map([[key(start.x,start.y), manhattan(start.x,start.y,goal.x,goal.y)]]);
+
+    function lowestF() {
+      let bestK=null, best=Infinity;
+      for (const k of open) {
+        const f = fScore.get(k) ?? Infinity;
+        if (f < best) { best=f; bestK=k; }
+      }
+      return bestK;
+    }
+
+    function neighbors(x,y) {
+      const ns = [[1,0],[-1,0],[0,1],[0,-1]];
+      const out = [];
+      for (const [dx,dy] of ns) {
+        const nx = x+dx, ny = y+dy;
+        if (nx<0 || ny<0 || nx>=N || ny>=N) continue;
+        if (world[ny][nx] === 1) continue; // hazard = impassable
+        out.push([nx,ny]);
+      }
+      return out;
+    }
+
+    const goalK = key(goal.x, goal.y);
+
+    while (open.size) {
+      const currentK = lowestF();
+      if (!currentK) break;
+      if (currentK === goalK) {
+        // reconstruct
+        const path = [];
+        let ck = currentK;
+        while (ck) {
+          const [cx,cy] = ck.split(',').map(Number);
+          path.push([cx,cy]);
+          ck = came.get(ck);
+        }
+        path.reverse();
+        return path;
+      }
+      open.delete(currentK);
+      const [cx,cy] = currentK.split(',').map(Number);
+      for (const [nx,ny] of neighbors(cx,cy)) {
+        const nk = key(nx,ny);
+        const tentative = (gScore.get(currentK) ?? Infinity) + 1;
+        if (tentative < (gScore.get(nk) ?? Infinity)) {
+          came.set(nk, currentK);
+          gScore.set(nk, tentative);
+          const h = manhattan(nx,ny,goal.x,goal.y);
+          fScore.set(nk, tentative + h);
+          if (!open.has(nk)) open.add(nk);
+        }
+      }
+    }
+    return null; // no path
+  }
+
+  // Render
+  let lastScore = 0;
+  function draw() {
+    // Background grid
+    gctx.fillStyle = "#141830";
+    gctx.fillRect(0,0,gridCanvas.width, gridCanvas.height);
+
+    // Fog radius
+    const fogR = parseInt(sFog.value, 10);
+
+    // Draw cells
+    for (let y=0; y<N; y++) {
+      for (let x=0; x<N; x++) {
+        const vx = x * cell, vy = y * cell;
+        let fogged = false;
+        if (fogR > 0) {
+          const d = manhattan(x,y,agent.x,agent.y);
+          fogged = d > fogR;
+        }
+
+        gctx.fillStyle = fogged ? "#171c3a" : "#0f142f";
+        gctx.fillRect(vx, vy, cell, cell);
+
+        if (world[y][x] === 1 && !fogged) { // hazards
+          gctx.fillStyle = "#3b1d2a";
+          gctx.fillRect(vx, vy, cell, cell);
+          gctx.fillStyle = "#ff6b6b";
+          gctx.globalAlpha = 0.7;
+          gctx.fillRect(vx+2, vy+2, cell-4, cell-4);
+          gctx.globalAlpha = 1;
+        }
+        if (world[y][x] === 2 && !fogged) { // goals
+          gctx.fillStyle = "#103525";
+          gctx.fillRect(vx, vy, cell, cell);
+          gctx.fillStyle = "#34d399";
+          gctx.beginPath();
+          gctx.arc(vx + cell/2, vy + cell/2, cell*0.28, 0, Math.PI*2);
+          gctx.fill();
+        }
+
+        gctx.strokeStyle = "rgba(255,255,255,.03)";
+        gctx.strokeRect(vx, vy, cell, cell);
+      }
+    }
+
+    // Agent color based on score
+    let agentColor = "#6ee7ff";
+    if (lastScore > 0.6) agentColor = "#34d399";
+    else if (lastScore < 0.15) agentColor = "#ff6b6b";
+    else agentColor = "#ffd166";
+
+    const ax = agent.x * cell + cell/2;
+    const ay = agent.y * cell + cell/2;
+    gctx.shadowColor = agentColor;
+    gctx.shadowBlur = 12;
+    gctx.fillStyle = agentColor;
+    gctx.beginPath();
+    gctx.arc(ax, ay, cell*0.32, 0, Math.PI*2);
+    gctx.fill();
+    gctx.shadowBlur = 0;
+    gctx.strokeStyle = "#0f1221";
+    gctx.lineWidth = 2;
+    gctx.stroke();
+
+    const ng = nearestGoal(agent.x, agent.y);
+    if (ng.gx >= 0) {
+      gctx.strokeStyle = "rgba(110,231,255,.5)";
+      gctx.setLineDash([6,6]);
+      gctx.beginPath();
+      gctx.moveTo(ax, ay);
+      gctx.lineTo(ng.gx * cell + cell/2, ng.gy * cell + cell/2);
+      gctx.stroke();
+      gctx.setLineDash([]);
+    }
+  }
+
+  // ======= Decision & Update =======
+  let running = false;
+  let timer = null;
+
+  
+  function step() {
+    // Scalars from sliders (baseline intent)
+    agent.desire = parseInt(sDesire.value,10)/100;
+    agent.anxiety = parseInt(sAnxiety.value,10)/100;
+    agent.confidence = clamp(agent.confidence, 0, 1); // adaptive
+
+    const currentGoal = nearestGoal(agent.x, agent.y);
+    const currentDist = currentGoal.dist;
+
+    // Evaluate neighbor moves (4-dir + stay), skipping hazards
+    const options = [
+      {dx: 0, dy: 0}, // wait
+      {dx: 1, dy: 0},
+      {dx: -1, dy: 0},
+      {dx: 0, dy: 1},
+      {dx: 0, dy: -1},
+    ];
+
+    let best = {score: -Infinity, dx:0, dy:0};
+    for (const o of options) {
+      const nx = Math.max(0, Math.min(N-1, agent.x + o.dx));
+      const ny = Math.max(0, Math.min(N-1, agent.y + o.dy));
+      if (world[ny][nx] === 1) continue; // NEVER enter hazards
+
+      const ng = nearestGoal(nx, ny);
+      const newDist = ng.dist;
+	// Normalize risk into [0,1]-ish and make confidence dilute perceived risk
+	const rawRisk = localRisk(nx, ny);
+	const risk = clamp(rawRisk / 2.0, 0, 1); // tune divisor to your map density
+	const effectiveRisk = clamp(risk * (1 - 0.5 * agent.confidence), 0, 1);
+
+	// Blend anxiety with perceived risk (so anxiety isn’t the only brake)
+	const effAnxiety = clamp(0.6 * agent.anxiety + 0.4 * effectiveRisk, 0, 1);
+
+	// Normalize progress: fraction of distance reduced ([-1, 1] bounded to [-1, 1/ currentDist] but safe)
+	const progress = (currentDist - newDist) / Math.max(1, currentDist);
+
+	// Final utility: desire/confidence reward progress; anxiety/risk push back
+	const score =
+	  0.6 * agent.desire * progress +
+	  0.4 * agent.confidence * progress -
+	  0.8 * effAnxiety;
+      if (score > best.score) best = {score, dx:o.dx, dy:o.dy};
+    }
+
+    // If jammed (not getting closer for several steps) or choosing to wait, use A* to route around hazards
+    let override = false;
+    if (best.dx === 0 && best.dy === 0) override = true;
+
+    const ng0 = nearestGoal(agent.x, agent.y);
+    const path = (ng0.gx >= 0) ? astar({x:agent.x,y:agent.y}, {x:ng0.gx,y:ng0.gy}) : null;
+
+    // Peek next step on path
+    if (path && path.length > 1) {
+      const [nx, ny] = path[1];
+      const newDist = manhattan(nx, ny, ng0.gx, ng0.gy);
+      const gotCloser = newDist < ng0.dist;
+
+      if (!gotCloser) agent.stagnation++; else agent.stagnation = 0;
+      if (agent.stagnation > 6) override = true;
+
+      // Consider emotions: high anxiety or low confidence favors route seeking
+      const favorRoute = (agent.anxiety > 0.5 || agent.confidence < 0.45);
+      if (override || favorRoute) {
+        best = {score: best.score, dx: nx - agent.x, dy: ny - agent.y};
+      }
+    }
+
+    lastScore = clamp((best.score + 1) / 2, 0, 1);
+    document.getElementById('statScore').textContent = best.score.toFixed(2);
+
+    // Apply move
+    agent.x = Math.max(0, Math.min(N-1, agent.x + best.dx));
+    agent.y = Math.max(0, Math.min(N-1, agent.y + best.dy));
+    agent.steps++;
+    document.getElementById('statSteps').textContent = agent.steps;
+
+    // After-move evaluation
+    const after = nearestGoal(agent.x, agent.y);
+    const didGetCloser = after.dist < currentDist;
+
+    if (didGetCloser) {
+      agent.confidence = clamp(agent.confidence + 0.03, 0, 1);
+      // Slight anxiety relief
+      sAnxiety.value = Math.max(0, parseInt(sAnxiety.value,10) );
+    } else {
+      agent.confidence = clamp(agent.confidence - 0.01, 0, 1);
+      agent.stagnation++;
+    }
+
+    // Reached goal?
+    if (world[agent.y][agent.x] === 2) {
+      agent.goalsReached++;
+      document.getElementById('statGoals').textContent = agent.goalsReached;
+      // Remove goal
+      world[agent.y][agent.x] = 0;
+      goals = goals.filter(g => !(g.x === agent.x && g.y === agent.y));
+      // spawn a new goal with improved placement
+      spawnGoalAvoiding(agent.x, agent.y);
+      // confidence reward
+      agent.confidence = clamp(agent.confidence + 0.25, 0, 1);
+      agent.stagnation = 0;
+    }
+
+    document.getElementById('statDist').textContent = (nearestGoal(agent.x, agent.y).dist).toString();
+
+    pushHistory(agent.desire, parseInt(sAnxiety.value,10)/100, agent.confidence);
+    draw();
+    drawSpark();
+  }
+
+  // ======= Sparkline History =======
+  const spark = document.getElementById('spark');
+  const sctx = spark.getContext('2d');
+  const MAX_HIST = 160;
+  agent.history.desire = Array(MAX_HIST).fill(agent.desire);
+  agent.history.anxiety = Array(MAX_HIST).fill(agent.anxiety);
+  agent.history.confidence = Array(MAX_HIST).fill(agent.confidence);
+
+  function pushHistory(d,a,c) {
+    const H = agent.history;
+    H.desire.push(clamp(d)); if (H.desire.length > MAX_HIST) H.desire.shift();
+    H.anxiety.push(clamp(a)); if (H.anxiety.length > MAX_HIST) H.anxiety.shift();
+    H.confidence.push(clamp(c)); if (H.confidence.length > MAX_HIST) H.confidence.shift();
+  }
+
+  function drawSpark() {
+    sctx.clearRect(0,0,spark.width, spark.height);
+    sctx.fillStyle = "#141830";
+    sctx.fillRect(0,0,spark.width, spark.height);
+    const pad = 6;
+    const w = spark.width - pad*2;
+    const h = spark.height - pad*2;
+
+    const series = [
+      {data: agent.history.desire, color: "#6ee7ff"},
+      {data: agent.history.anxiety, color: "#ffd166"},
+      {data: agent.history.confidence, color: "#a78bfa"}
+    ];
+
+    for (const s of series) {
+      sctx.beginPath();
+      const len = s.data.length;
+      for (let i=0; i<len; i++) {
+        const x = pad + (i/(len-1))*w;
+        const y = pad + (1 - s.data[i]) * h;
+        if (i===0) sctx.moveTo(x,y); else sctx.lineTo(x,y);
+      }
+      sctx.strokeStyle = s.color;
+      sctx.lineWidth = 2;
+      sctx.stroke();
+    }
+  }
+
+  // ======= Controls =======
+  const sDesire = document.getElementById('sDesire');
+  const sAnxiety = document.getElementById('sAnxiety');
+  const sConfidence = document.getElementById('sConfidence');
+  const sSpeed = document.getElementById('sSpeed');
+  const vDesire = document.getElementById('vDesire');
+  const vAnxiety = document.getElementById('vAnxiety');
+  const vConfidence = document.getElementById('vConfidence');
+  const vSpeed = document.getElementById('vSpeed');
+  const vFog = document.getElementById('vFog');
+  const vHazard = document.getElementById('vHazard');
+  const vGoals = document.getElementById('vGoals');
+
+  function syncLabels() {
+    vDesire.textContent = (parseInt(sDesire.value,10)/100).toFixed(2);
+    vAnxiety.textContent = (parseInt(sAnxiety.value,10)/100).toFixed(2);
+    vConfidence.textContent = agent.confidence.toFixed(2);
+    vSpeed.textContent = sSpeed.value;
+    vFog.textContent = document.getElementById('sFog').value;
+    vHazard.textContent = sHazard.value + "%";
+    vGoals.textContent = sGoals.value;
+  }
+
+  [sDesire, sAnxiety, sSpeed, document.getElementById('sFog'), sHazard, sGoals].forEach(el => {
+    el.addEventListener('input', () => {
+      if (el === sHazard || el === sGoals) resetWorld();
+      syncLabels();
+      draw();
+    });
+  });
+
+  // Confidence slider acts as a "nudge" (not absolute set)
+  sConfidence.addEventListener('input', () => {
+    const target = parseInt(sConfidence.value,10)/100;
+    agent.confidence = clamp(agent.confidence * 0.8 + target * 0.2, 0, 1);
+    syncLabels();
+  });
+
+  document.getElementById('btnStart').addEventListener('click', () => {
+    if (running) return;
+    running = true;
+    clearInterval(timer);
+    timer = setInterval(step, parseInt(sSpeed.value,10));
+  });
+  document.getElementById('btnPause').addEventListener('click', () => {
+    running = false;
+    clearInterval(timer);
+  });
+  document.getElementById('btnReset').addEventListener('click', () => {
+    running = false;
+    clearInterval(timer);
+    resetWorld();
+    recenterAgent();
+    agent.confidence = parseInt(sConfidence.value,10)/100;
+    agent.history.desire = Array(MAX_HIST).fill(parseInt(sDesire.value,10)/100);
+    agent.history.anxiety = Array(MAX_HIST).fill(parseInt(sAnxiety.value,10)/100);
+    agent.history.confidence = Array(MAX_HIST).fill(agent.confidence);
+    document.getElementById('statSteps').textContent = "0";
+    document.getElementById('statGoals').textContent = "0";
+    document.getElementById('statDist').textContent = "—";
+    document.getElementById('statScore').textContent = "—";
+    draw();
+    drawSpark();
+  });
+  document.getElementById('btnRecenter').addEventListener('click', () => {
+    recenterAgent();
+    draw();
+  });
+
+  // Presets
+  document.querySelectorAll('.chip').forEach(ch => {
+    ch.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(x => x.dataset.active = "false");
+      ch.dataset.active = "true";
+      const p = ch.dataset.preset;
+      if (p === "cautious") {
+        sDesire.value = 55;
+        sAnxiety.value = 45;
+        sConfidence.value = 50;
+      } else if (p === "balanced") {
+        sDesire.value = 65;
+        sAnxiety.value = 30;
+        sConfidence.value = 65;
+      } else {
+        // bold
+        sDesire.value = 85;
+        sAnxiety.value = 10;
+        sConfidence.value = 80;
+      }
+      agent.confidence = agent.confidence*0.6 + (parseInt(sConfidence.value,10)/100)*0.4;
+      syncLabels();
+      draw();
+    });
+  });
+
+  // Initial boot
+  resetWorld();
+  recenterAgent();
+  syncLabels();
+  draw();
+  drawSpark();
+  </script>
+</body>
+</html>
