@@ -1,4 +1,4 @@
-#Emote-AI 2.0
+### Emote-AI 2.1
 
 ### A Minimal Framework for Agent Behavior Using Desire, Anxiety, and Confidence
 
@@ -7,16 +7,21 @@
 
 ---
 
-## Concept Update: Emote-AI 2.0
+## Concept Update: Emote-AI 2.1
 
 In the original Emote-AI framework, agent behavior was governed by just two emotional primitives:
 
 * **Desire**: Goal-oriented motivation (the "pull" toward outcomes)
 * **Anxiety**: Regulatory tension due to uncertainty, failure risk, or external obstacles
 
-In **version 2.0**, we introduce a third primitive:
+The Emote-AI 2.x series adds a third primitive to balance the system:
 
-* **Confidence**: The agent's internal assessment of its ability to succeed based on past outcomes and current situational clarity
+* **Confidence** *(introduced in the 2.x series)*: The agent's internal assessment of its ability to succeed based on past outcomes and current situational clarity
+
+Version 2.1 focuses on environmental safety in the grid-world demo:
+
+* **Hazard-driven anxiety behavior** raises the anxiety scalar when hazards (or fog-obscured risks) approach, nudging the agent toward safer, slower routes.
+* **No-freeze safeguard** prevents the agent from getting stuck at hazard walls by invoking A* route-seeking before movement stalls, ensuring progress without stepping into danger.
 
 ---
 
@@ -34,11 +39,12 @@ In **version 2.0**, we introduce a third primitive:
 * Rises with uncertainty, obstacles, or repeated failure
 * Modulates risk-awareness and caution
 
-### 3. **Confidence** *(new in 2.0)*
+### 3. **Confidence** *(introduced in the 2.x series)*
 
 * Range: 0.0 (no self-efficacy) to 1.0 (total certainty)
 * Increases with successful task execution
 * Decreases with failure, interruption, or insufficient feedback
+* Works with the 2.1 hazard response to relax defensive routing once threats dissipate
 
 ---
 
@@ -108,4 +114,4 @@ class EmotionLiteAgent:
 
 ##  Summary
 
-Emote-AI 2.0 expands the original minimal framework by introducing **confidence** as a third scalar, giving agents the ability to adjust behavior based on self-assessed capability in dynamic environments. The goal remains clarity, safety, and low-complexity control over behavioral logic for intelligent agents in alignment-critical contexts.
+Emote-AI 2.1 builds on the original minimal framework by pairing the **confidence** scalar with hazard-aware anxiety modulation and the no-freeze safeguard, giving agents the ability to self-regulate risk while staying mobile. The goal remains clarity, safety, and low-complexity control over behavioral logic for intelligent agents in alignment-critical contexts.
