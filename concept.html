@@ -528,8 +528,35 @@
   function step() {
     // Scalars from sliders (baseline intent)
     agent.desire = parseInt(sDesire.value,10)/100;
-    agent.anxiety = parseInt(sAnxiety.value,10)/100;
+    const baseAnxiety = parseInt(sAnxiety.value,10)/100;
     agent.confidence = clamp(agent.confidence, 0, 1); // adaptive
+
+    // Sample hazard pressure around the agent to adapt anxiety dynamically
+    const anxietySamples = [
+      {dx: 0, dy: 0, w: 1},
+      {dx: 1, dy: 0, w: 0.75},
+      {dx: -1, dy: 0, w: 0.75},
+      {dx: 0, dy: 1, w: 0.75},
+      {dx: 0, dy: -1, w: 0.75},
+      {dx: 1, dy: 1, w: 0.5},
+      {dx: -1, dy: 1, w: 0.5},
+      {dx: 1, dy: -1, w: 0.5},
+      {dx: -1, dy: -1, w: 0.5},
+    ];
+
+    let weightedRisk = 0;
+    let weightTotal = 0;
+    for (const sample of anxietySamples) {
+      const sx = agent.x + sample.dx;
+      const sy = agent.y + sample.dy;
+      if (sx < 0 || sy < 0 || sx >= N || sy >= N) continue;
+      weightedRisk += localRisk(sx, sy) * sample.w;
+      weightTotal += sample.w;
+    }
+    const avgRisk = weightTotal > 0 ? weightedRisk / weightTotal : 0;
+    const hazardTerm = clamp((avgRisk / 1.5) * (1 - 0.35 * agent.confidence), 0, 1);
+    agent.anxiety = clamp(baseAnxiety * 0.7 + hazardTerm * 0.3, 0, 1);
+    vAnxiety.textContent = agent.anxiety.toFixed(2);
 
     const currentGoal = nearestGoal(agent.x, agent.y);
     const currentDist = currentGoal.dist;
@@ -651,7 +678,7 @@
 
     document.getElementById('statDist').textContent = (nearestGoal(agent.x, agent.y).dist).toString();
 
-    pushHistory(agent.desire, parseInt(sAnxiety.value,10)/100, agent.confidence);
+    pushHistory(agent.desire, agent.anxiety, agent.confidence);
     draw();
     drawSpark();
   }
@@ -752,16 +779,24 @@
     clearInterval(timer);
     resetWorld();
     recenterAgent();
+    const baseDesire = parseInt(sDesire.value,10)/100;
+    const baseAnxiety = parseInt(sAnxiety.value,10)/100;
+    agent.desire = baseDesire;
+    agent.anxiety = baseAnxiety;
     agent.confidence = parseInt(sConfidence.value,10)/100;
-    agent.history.desire = Array(MAX_HIST).fill(parseInt(sDesire.value,10)/100);
-    agent.history.anxiety = Array(MAX_HIST).fill(parseInt(sAnxiety.value,10)/100);
+    agent.history.desire = Array(MAX_HIST).fill(baseDesire);
+    agent.history.anxiety = Array(MAX_HIST).fill(baseAnxiety);
     agent.history.confidence = Array(MAX_HIST).fill(agent.confidence);
     agent.fallbacks = 0;
     document.getElementById('statSteps').textContent = "0";
     document.getElementById('statGoals').textContent = "0";
     document.getElementById('statDist').textContent = "—";
     document.getElementById('statScore').textContent = "—";
+   
+    syncLabels();
+
     statFallbacks.textContent = "0";
+main
     draw();
     drawSpark();
   });
