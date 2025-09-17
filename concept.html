@@ -218,6 +218,7 @@
         <div class="statRow"><span>Distance → nearest goal</span><strong id="statDist">—</strong></div>
         <div class="statRow"><span>Move score</span><strong id="statScore">—</strong></div>
         <div class="statRow"><span>Steps</span><strong id="statSteps">0</strong></div>
+        <div class="statRow"><span>Fallback moves</span><strong id="statFallbacks">0</strong></div>
         <div class="statRow"><span>Goals reached</span><strong id="statGoals">0</strong></div>
         <div class="note" style="margin-top:8px">
           Decision rule: <code>(desire * confidence) - anxiety - risk + progressGain</code><br/>
@@ -259,6 +260,7 @@
   // UI references (declare early so resetWorld can read)
   const sHazard = document.getElementById('sHazard');
   const sGoals = document.getElementById('sGoals');
+  const statFallbacks = document.getElementById('statFallbacks');
 
   const manhattan = (x1,y1,x2,y2) => Math.abs(x1-x2) + Math.abs(y1-y2);
 
@@ -331,6 +333,7 @@
     steps: 0,
     goalsReached: 0,
     stagnation: 0,
+    fallbacks: 0,
     history: { desire: [], anxiety: [], confidence: [] },
   };
 
@@ -541,6 +544,7 @@
     ];
 
     let best = {score: -Infinity, dx:0, dy:0};
+    const evaluatedOptions = [];
     for (const o of options) {
       const nx = Math.max(0, Math.min(N-1, agent.x + o.dx));
       const ny = Math.max(0, Math.min(N-1, agent.y + o.dy));
@@ -548,23 +552,24 @@
 
       const ng = nearestGoal(nx, ny);
       const newDist = ng.dist;
-	// Normalize risk into [0,1]-ish and make confidence dilute perceived risk
-	const rawRisk = localRisk(nx, ny);
-	const risk = clamp(rawRisk / 2.0, 0, 1); // tune divisor to your map density
-	const effectiveRisk = clamp(risk * (1 - 0.5 * agent.confidence), 0, 1);
+      // Normalize risk into [0,1]-ish and make confidence dilute perceived risk
+      const rawRisk = localRisk(nx, ny);
+      const risk = clamp(rawRisk / 2.0, 0, 1); // tune divisor to your map density
+      const effectiveRisk = clamp(risk * (1 - 0.5 * agent.confidence), 0, 1);
 
-	// Blend anxiety with perceived risk (so anxiety isn’t the only brake)
-	const effAnxiety = clamp(0.6 * agent.anxiety + 0.4 * effectiveRisk, 0, 1);
+      // Blend anxiety with perceived risk (so anxiety isn’t the only brake)
+      const effAnxiety = clamp(0.6 * agent.anxiety + 0.4 * effectiveRisk, 0, 1);
 
-	// Normalize progress: fraction of distance reduced ([-1, 1] bounded to [-1, 1/ currentDist] but safe)
-	const progress = (currentDist - newDist) / Math.max(1, currentDist);
+      // Normalize progress: fraction of distance reduced ([-1, 1] bounded to [-1, 1/ currentDist] but safe)
+      const progress = (currentDist - newDist) / Math.max(1, currentDist);
 
-	// Final utility: desire/confidence reward progress; anxiety/risk push back
-	const score =
-	  0.6 * agent.desire * progress +
-	  0.4 * agent.confidence * progress -
-	  0.8 * effAnxiety;
+      // Final utility: desire/confidence reward progress; anxiety/risk push back
+      const score =
+        0.6 * agent.desire * progress +
+        0.4 * agent.confidence * progress -
+        0.8 * effAnxiety;
       if (score > best.score) best = {score, dx:o.dx, dy:o.dy};
+      evaluatedOptions.push({dx: o.dx, dy: o.dy, score, risk: rawRisk, nx, ny});
     }
 
     // If jammed (not getting closer for several steps) or choosing to wait, use A* to route around hazards
@@ -573,6 +578,24 @@
 
     const ng0 = nearestGoal(agent.x, agent.y);
     const path = (ng0.gx >= 0) ? astar({x:agent.x,y:agent.y}, {x:ng0.gx,y:ng0.gy}) : null;
+
+    if ((!path || path.length <= 1) && best.dx === 0 && best.dy === 0) {
+      const fallbackCandidate = evaluatedOptions
+        .filter(opt => !(opt.dx === 0 && opt.dy === 0))
+        .filter(opt => !(opt.nx === agent.x && opt.ny === agent.y))
+        .reduce((acc, opt) => {
+          if (!acc) return opt;
+          if (opt.risk < acc.risk) return opt;
+          if (opt.risk === acc.risk && opt.score > acc.score) return opt;
+          return acc;
+        }, null);
+      if (fallbackCandidate) {
+        best = {score: fallbackCandidate.score, dx: fallbackCandidate.dx, dy: fallbackCandidate.dy};
+        agent.stagnation = 0;
+        agent.fallbacks++;
+        statFallbacks.textContent = agent.fallbacks.toString();
+      }
+    }
 
     // Peek next step on path
     if (path && path.length > 1) {
@@ -733,10 +756,12 @@
     agent.history.desire = Array(MAX_HIST).fill(parseInt(sDesire.value,10)/100);
     agent.history.anxiety = Array(MAX_HIST).fill(parseInt(sAnxiety.value,10)/100);
     agent.history.confidence = Array(MAX_HIST).fill(agent.confidence);
+    agent.fallbacks = 0;
     document.getElementById('statSteps').textContent = "0";
     document.getElementById('statGoals').textContent = "0";
     document.getElementById('statDist').textContent = "—";
     document.getElementById('statScore').textContent = "—";
+    statFallbacks.textContent = "0";
     draw();
     drawSpark();
   });
